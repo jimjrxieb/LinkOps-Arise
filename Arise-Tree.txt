@@ -1,0 +1,15 @@
+.
+├── Arise-Tree.txt
+├── README.md
+├── backend.tf
+├── deploy.sh
+├── main.tf
+├── monitoring-setup.sh
+├── outputs.tf
+├── provider.tf
+├── scripts
+│   ├── cleanup-secrets.sh
+│   └── setup-secrets.sh
+└── variables.tf
+
+1 directory, 11 files
