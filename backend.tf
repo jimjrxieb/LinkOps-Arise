@@ -1,12 +1,12 @@
 # Uncomment and configure for remote state storage
-# terraform {
-#   backend "azurerm" {
-#     resource_group_name  = "linkops-terraform-rg"
-#     storage_account_name = "linkopsterraform"
-#     container_name       = "tfstate"
-#     key                  = "linkops.terraform.tfstate"
-#   }
-# }
+terraform {
+  backend "azurerm" {
+    resource_group_name   = "linkops-rg"
+    storage_account_name  = "linkopsstorage"
+    container_name        = "tfstate"
+    key                   = "linkops.tfstate"
+  }
+}
 
 # To use remote state storage:
 # 1. Create a storage account in Azure

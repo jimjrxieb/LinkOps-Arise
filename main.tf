@@ -87,16 +87,16 @@ variable "grafana_admin_password" {
   sensitive   = true
 }
 
+variable "dns_prefix" {
+  description = "DNS prefix for the AKS cluster"
+  type        = string
+  default     = "linkops"
+}
+
 # Resource Group
 resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
   location = var.location
-  
-  tags = {
-    Environment = var.environment
-    Project     = var.project
-    ManagedBy   = "terraform"
-  }
 }
 
 # Virtual Network
@@ -120,38 +120,17 @@ resource "azurerm_subnet" "aks" {
   address_prefixes     = ["10.0.1.0/24"]
 }
 
-# Azure Container Registry
-resource "azurerm_container_registry" "main" {
-  name                = var.acr_name
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
-  sku                 = "Basic"
-  admin_enabled       = true
-  
-  tags = {
-    Environment = var.environment
-    Project     = var.project
-  }
-}
-
 # AKS Cluster
-resource "azurerm_kubernetes_cluster" "aks" {
+resource "azurerm_kubernetes_cluster" "main" {
   name                = var.cluster_name
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  dns_prefix          = "linkops"
-  kubernetes_version  = "1.28.0"
+  dns_prefix          = var.dns_prefix
 
   default_node_pool {
-    name                = "default"
-    node_count          = var.node_count
-    vm_size             = var.vm_size
-    os_disk_size_gb     = 30
-    type                = "VirtualMachineScaleSets"
-    enable_auto_scaling = true
-    min_count           = 1
-    max_count           = 3
-    vnet_subnet_id      = azurerm_subnet.aks.id
+    name       = "default"
+    node_count = var.node_count
+    vm_size    = "Standard_DS2_v2"
   }
 
   identity {
@@ -175,11 +154,16 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 
   tags = {
-    Environment = var.environment
-    Project     = var.project
+    environment = "linkops"
   }
+}
 
-  depends_on = [azurerm_container_registry.main]
+resource "azurerm_kubernetes_cluster_node_pool" "system" {
+  name                  = "systemnp"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.main.id
+  vm_size               = "Standard_DS2_v2"
+  node_count            = 1
+  mode                  = "System"
 }
 
 # Log Analytics Workspace for AKS monitoring
@@ -198,7 +182,7 @@ resource "azurerm_log_analytics_workspace" "main" {
 
 # Role assignment for AKS to pull from ACR
 resource "azurerm_role_assignment" "aks_acr" {
-  principal_id                     = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
+  principal_id                     = azurerm_kubernetes_cluster.main.kubelet_identity[0].object_id
   role_definition_name             = "AcrPull"
   scope                            = azurerm_container_registry.main.id
   skip_service_principal_aad_check = true
@@ -227,7 +211,7 @@ resource "helm_release" "nginx_ingress" {
     value = "true"
   }
 
-  depends_on = [azurerm_kubernetes_cluster.aks]
+  depends_on = [azurerm_kubernetes_cluster.main]
 }
 
 # Outputs
@@ -236,15 +220,15 @@ output "resource_group_name" {
 }
 
 output "aks_cluster_name" {
-  value = azurerm_kubernetes_cluster.aks.name
+  value = azurerm_kubernetes_cluster.main.name
 }
 
 output "aks_cluster_id" {
-  value = azurerm_kubernetes_cluster.aks.id
+  value = azurerm_kubernetes_cluster.main.id
 }
 
 output "aks_kube_config" {
-  value     = azurerm_kubernetes_cluster.aks.kube_config_raw
+  value     = azurerm_kubernetes_cluster.main.kube_config_raw
   sensitive = true
 }
 
@@ -263,47 +247,33 @@ output "acr_admin_password" {
 
 # Kubernetes Provider
 provider "kubernetes" {
-  host                   = azurerm_kubernetes_cluster.aks.kube_config.0.host
-  client_certificate     = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)
-  client_key             = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)
-  cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)
+  host                   = azurerm_kubernetes_cluster.main.kube_config.0.host
+  client_certificate     = base64decode(azurerm_kubernetes_cluster.main.kube_config.0.client_certificate)
+  client_key             = base64decode(azurerm_kubernetes_cluster.main.kube_config.0.client_key)
+  cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.main.kube_config.0.cluster_ca_certificate)
 }
 
 # Helm Provider
 provider "helm" {
   kubernetes {
-    host                   = azurerm_kubernetes_cluster.aks.kube_config.0.host
-    client_certificate     = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_certificate)
-    client_key             = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.client_key)
-    cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)
+    host                   = azurerm_kubernetes_cluster.main.kube_config.0.host
+    client_certificate     = base64decode(azurerm_kubernetes_cluster.main.kube_config.0.client_certificate)
+    client_key             = base64decode(azurerm_kubernetes_cluster.main.kube_config.0.client_key)
+    cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.main.kube_config.0.cluster_ca_certificate)
   }
 }
 
-# ArgoCD Helm Chart
-module "argocd" {
-  source  = "terraform-helm/argocd/kubernetes"
-  version = ">= 1.0"
-
-  namespace = "argocd"
+# Optional: install ArgoCD via Helm
+resource "helm_release" "argocd" {
+  name       = "argocd"
+  repository = "https://argoproj.github.io/argo-helm"
+  chart      = "argo-cd"
+  namespace  = "argocd"
   create_namespace = true
-  chart  = "argo-cd"
-  repo   = "https://argoproj.github.io/argo-helm"
-  
+  version    = "5.51.6"
+
   values = [
-    <<-EOT
-    server:
-      extraArgs:
-        - --insecure
-      ingress:
-        enabled: true
-        annotations:
-          kubernetes.io/ingress.class: nginx
-        hosts:
-          - argocd.linkops.local
-    configs:
-      secret:
-        argocdServerAdminPassword: "$2a$10$rQZ8iKcJqX8qX8qX8qX8qO"
-    EOT
+    file("${path.module}/scripts/argocd-values.yaml")
   ]
 }
 
@@ -424,4 +394,17 @@ resource "kubernetes_manifest" "argocd_app" {
       }
     }
   }
+}
+
+resource "helm_release" "kube_prometheus_stack" {
+  name             = "kube-prometheus"
+  repository       = "https://prometheus-community.github.io/helm-charts"
+  chart            = "kube-prometheus-stack"
+  namespace        = "monitoring"
+  create_namespace = true
+  version          = "55.5.0"
+
+  values = [
+    file("${path.module}/scripts/monitoring-values.yaml")
+  ]
 } 

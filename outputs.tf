@@ -5,33 +5,23 @@ output "resource_group_name" {
 
 output "aks_cluster_name" {
   description = "Name of the AKS cluster"
-  value       = azurerm_kubernetes_cluster.aks.name
+  value       = azurerm_kubernetes_cluster.main.name
 }
 
-output "aks_cluster_id" {
-  description = "ID of the AKS cluster"
-  value       = azurerm_kubernetes_cluster.aks.id
-}
-
-output "aks_kube_config" {
+output "kube_config_raw" {
   description = "Kubeconfig for the AKS cluster"
-  value       = azurerm_kubernetes_cluster.aks.kube_config_raw
+  value       = azurerm_kubernetes_cluster.main.kube_config_raw
   sensitive   = true
 }
 
-output "acr_login_server" {
-  description = "Azure Container Registry login server"
-  value       = azurerm_container_registry.main.login_server
+output "aks_cluster_fqdn" {
+  description = "FQDN of the AKS cluster"
+  value       = azurerm_kubernetes_cluster.main.fqdn
 }
 
-output "acr_admin_username" {
-  description = "Azure Container Registry admin username"
-  value       = azurerm_container_registry.main.admin_username
-}
-
-output "acr_admin_password" {
-  description = "Azure Container Registry admin password"
-  value       = azurerm_container_registry.main.admin_password
+output "client_certificate" {
+  description = "Client certificate for the AKS cluster"
+  value       = azurerm_kubernetes_cluster.main.kube_config[0].client_certificate
   sensitive   = true
 }
 

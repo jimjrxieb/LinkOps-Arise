@@ -1,0 +1,13 @@
+LinkOps Infrastructure CLI (arise.sh)
+
+Usage: ./arise.sh [COMMAND] [--auto-approve]
+
+Commands:
+  deploy       Deploy LinkOps Infra (default)
+  destroy      Tear down all resources
+  help         Show this help message
+
+Examples:
+  ./arise.sh
+  ./arise.sh deploy --auto-approve
+  ./arise.sh destroy

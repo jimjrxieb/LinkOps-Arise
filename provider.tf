@@ -1,27 +1,19 @@
 terraform {
-  required_version = ">= 1.0"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.0"
+      version = "~> 3.70.0"
     }
     helm = {
-      source  = "hashicorp/helm"
-      version = "~> 2.0"
+      source = "hashicorp/helm"
+      version = "~> 2.11.0"
     }
   }
+  required_version = ">= 1.4.0"
 }
 
 provider "azurerm" {
-  features {
-    key_vault {
-      purge_soft_delete_on_destroy = true
-    }
-  }
+  features {}
 }
 
 provider "kubernetes" {

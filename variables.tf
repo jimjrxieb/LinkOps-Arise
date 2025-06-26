@@ -1,47 +1,35 @@
 variable "resource_group_name" {
-  description = "Name of the resource group"
   type        = string
   default     = "linkops-rg"
+  description = "Azure Resource Group name"
 }
 
 variable "location" {
-  description = "Azure region"
   type        = string
   default     = "East US"
+  description = "Azure region"
 }
 
 variable "cluster_name" {
-  description = "Name of the AKS cluster"
   type        = string
   default     = "linkops-aks"
+  description = "AKS cluster name"
 }
 
 variable "node_count" {
-  description = "Number of AKS nodes"
   type        = number
   default     = 2
+  description = "Number of AKS worker nodes"
 }
 
-variable "vm_size" {
-  description = "Size of AKS nodes"
-  type        = string
-  default     = "Standard_DS2_v2"
-}
-
-variable "acr_name" {
-  description = "Name of the Azure Container Registry"
-  type        = string
-  default     = "linkopsacr"
-}
-
-variable "environment" {
-  description = "Environment name"
-  type        = string
-  default     = "demo"
-}
-
-variable "project" {
-  description = "Project name"
+variable "dns_prefix" {
   type        = string
   default     = "linkops"
+  description = "DNS prefix for AKS"
+}
+
+variable "grafana_admin_password" {
+  type        = string
+  description = "Admin password for Grafana"
+  sensitive   = true
 } 
