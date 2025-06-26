@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # LinkOps Terraform Deployment Script (a.k.a. Arise)
-# Automates infrastructure deployment on Azure
 
 set -e
 trap 'print_error "Script failed unexpectedly. Check logs or last command."' ERR
@@ -26,6 +25,15 @@ print_error()    { echo -e "${RED}[ERROR]${NC} $1"; }
 # Optional: auto-approve via --auto-approve
 AUTO_APPROVE=""
 [[ "$2" == "--auto-approve" ]] && AUTO_APPROVE="true"
+
+# Default Grafana password if not set
+: "${TF_VAR_grafana_admin_password:=ShadowGrafana!2025}"
+export TF_VAR_grafana_admin_password
+
+force_unlock() {
+    print_status "Checking for stale Terraform state lock..."
+    terraform force-unlock $(terraform force-unlock -dry-run 2>&1 | grep -oE "[a-f0-9-]{36}") 2>/dev/null || true
+}
 
 check_prerequisites() {
     print_status "Checking prerequisites..."
@@ -56,7 +64,8 @@ init_terraform() {
 
 plan_terraform() {
     print_status "Planning Terraform deployment..."
-    terraform plan -out=tfplan
+    force_unlock
+    terraform plan -lock-timeout=60s -out=tfplan
     print_success "Terraform plan created"
     print_warning "Review the plan before applying"
 }
@@ -67,7 +76,7 @@ apply_terraform() {
         print_error "No plan file found. Run 'terraform plan' first."
         exit 1
     fi
-    terraform apply ${AUTO_APPROVE:+-auto-approve} tfplan
+    terraform apply -lock-timeout=60s ${AUTO_APPROVE:+-auto-approve} tfplan
     print_success "Terraform apply completed"
 }
 

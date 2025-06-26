@@ -32,4 +32,16 @@ variable "grafana_admin_password" {
   type        = string
   description = "Admin password for Grafana"
   sensitive   = true
+}
+
+variable "environment" {
+  description = "Environment name"
+  type        = string
+  default     = "demo"
+}
+
+variable "project" {
+  description = "Project name"
+  type        = string
+  default     = "linkops"
 } 
