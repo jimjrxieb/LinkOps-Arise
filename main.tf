@@ -27,10 +27,11 @@ resource "azurerm_subnet" "aks" {
 
 # AKS Cluster
 resource "azurerm_kubernetes_cluster" "main" {
-  name                = var.cluster_name
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  dns_prefix          = var.dns_prefix
+  provider            = azurerm.aks
+  name                = "linkops-aks"
+  location            = "eastus"
+  resource_group_name = "linkops-rg"
+  dns_prefix          = "linkops"
   kubernetes_version  = "1.27.9"
 
   default_node_pool {

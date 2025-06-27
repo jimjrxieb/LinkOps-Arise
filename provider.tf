@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.75.0"
+      version = ">=3.0.0"
     }
     helm = {
       source = "hashicorp/helm"
@@ -14,7 +14,13 @@ terraform {
 
 provider "azurerm" {
   features {}
-  skip_provider_registration = true
+  subscription_id = "e864a989-7282-4f8e-8ded-2b68911dcc95"
+}
+
+provider "azurerm" {
+  features {}
+  subscription_id = "e864a989-7282-4f8e-8ded-2b68911dcc95"
+  alias  = "aks"
 }
 
 # Temporarily commented out until AKS cluster is created
