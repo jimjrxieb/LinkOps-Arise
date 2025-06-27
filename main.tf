@@ -82,54 +82,55 @@ resource "azurerm_log_analytics_workspace" "main" {
 }
 
 # NGINX Ingress Controller
-resource "helm_release" "nginx_ingress" {
-  name       = "nginx-ingress"
-  repository = "https://kubernetes.github.io/ingress-nginx"
-  chart      = "ingress-nginx"
-  namespace  = "ingress-nginx"
-  create_namespace = true
+# Temporarily commented out until AKS cluster is created
+# resource "helm_release" "nginx_ingress" {
+#   name       = "nginx-ingress"
+#   repository = "https://kubernetes.github.io/ingress-nginx"
+#   chart      = "ingress-nginx"
+#   namespace  = "ingress-nginx"
+#   create_namespace = true
 
-  set {
-    name  = "controller.service.type"
-    value = "LoadBalancer"
-  }
+#   set {
+#     name  = "controller.service.type"
+#     value = "LoadBalancer"
+#   }
 
-  set {
-    name  = "controller.ingressClassResource.name"
-    value = "nginx"
-  }
+#   set {
+#     name  = "controller.ingressClassResource.name"
+#     value = "nginx"
+#   }
 
-  set {
-    name  = "controller.ingressClassResource.default"
-    value = "true"
-  }
+#   set {
+#     name  = "controller.ingressClassResource.default"
+#     value = "true"
+#   }
 
-  depends_on = [azurerm_kubernetes_cluster.main]
-}
+#   depends_on = [azurerm_kubernetes_cluster.main]
+# }
 
 # Optional: install ArgoCD via Helm
-resource "helm_release" "argocd" {
-  name       = "argocd"
-  repository = "https://argoproj.github.io/argo-helm"
-  chart      = "argo-cd"
-  namespace  = "argocd"
-  create_namespace = true
-  version    = "5.51.6"
+# resource "helm_release" "argocd" {
+#   name       = "argocd"
+#   repository = "https://argoproj.github.io/argo-helm"
+#   chart      = "argo-cd"
+#   namespace  = "argocd"
+#   create_namespace = true
+#   version    = "5.51.6"
 
-  values = [
-    file("${path.module}/scripts/argocd-values.yaml")
-  ]
-}
+#   values = [
+#     file("${path.module}/scripts/argocd-values.yaml")
+#   ]
+# }
 
-resource "helm_release" "kube_prometheus_stack" {
-  name             = "kube-prometheus"
-  repository       = "https://prometheus-community.github.io/helm-charts"
-  chart            = "kube-prometheus-stack"
-  namespace        = "monitoring"
-  create_namespace = true
-  version          = "55.5.0"
+# resource "helm_release" "kube_prometheus_stack" {
+#   name             = "kube-prometheus"
+#   repository       = "https://prometheus-community.github.io/helm-charts"
+#   chart            = "kube-prometheus-stack"
+#   namespace        = "monitoring"
+#   create_namespace = true
+#   version          = "55.5.0"
 
-  values = [
-    file("${path.module}/scripts/monitoring-values.yaml")
-  ]
-} 
+#   values = [
+#     file("${path.module}/scripts/monitoring-values.yaml")
+#   ]
+# } 

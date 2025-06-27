@@ -11,11 +11,12 @@ Successfully configured the backend "azurerm"! Terraform will automatically
 use this backend unless the backend configuration changes.[0m
 [0m[1mInitializing provider plugins...[0m
 - Finding hashicorp/azurerm versions matching "~> 3.70.0"...
-- Finding latest version of hashicorp/kubernetes...
 - Finding hashicorp/helm versions matching "~> 2.11.0"...
 - Using previously-installed hashicorp/azurerm v3.70.0
-- Using previously-installed hashicorp/kubernetes v2.37.1
 - Using previously-installed hashicorp/helm v2.11.0
+Terraform has made some changes to the provider dependency selections recorded
+in the .terraform.lock.hcl file. Review those changes and commit them to your
+version control system if they represent changes you intended to make.
 
 [0m[1m[32mTerraform has been successfully initialized![0m[32m[0m
 [0m[32m
@@ -42,6 +43,7 @@ Options:
 
   -force                 Don't ask for input for unlock confirmation.
 Acquiring state lock. This may take a few moments...
+[0m[1mazurerm_resource_group.main: Refreshing state... [id=/subscriptions/e864a989-7282-4f8e-8ded-2b68911dcc95/resourceGroups/linkops-rg][0m
 
 Terraform used the selected providers to generate the following execution
 plan. Resource actions are indicated with the following symbols:
@@ -183,13 +185,6 @@ Terraform will perform the following actions:
       [32m+[0m[0m workspace_id                    = (known after apply)
     }
 
-[1m  # azurerm_resource_group.main[0m will be created
-[0m  [32m+[0m[0m resource "azurerm_resource_group" "main" {
-      [32m+[0m[0m id       = (known after apply)
-      [32m+[0m[0m location = "eastus"
-      [32m+[0m[0m name     = "linkops-rg"
-    }
-
 [1m  # azurerm_subnet.aks[0m will be created
 [0m  [32m+[0m[0m resource "azurerm_subnet" "aks" {
       [32m+[0m[0m address_prefixes                               = [
@@ -223,173 +218,7 @@ Terraform will perform the following actions:
         }
     }
 
-[1m  # helm_release.argocd[0m will be created
-[0m  [32m+[0m[0m resource "helm_release" "argocd" {
-      [32m+[0m[0m atomic                     = false
-      [32m+[0m[0m chart                      = "argo-cd"
-      [32m+[0m[0m cleanup_on_fail            = false
-      [32m+[0m[0m create_namespace           = true
-      [32m+[0m[0m dependency_update          = false
-      [32m+[0m[0m disable_crd_hooks          = false
-      [32m+[0m[0m disable_openapi_validation = false
-      [32m+[0m[0m disable_webhooks           = false
-      [32m+[0m[0m force_update               = false
-      [32m+[0m[0m id                         = (known after apply)
-      [32m+[0m[0m lint                       = false
-      [32m+[0m[0m manifest                   = (known after apply)
-      [32m+[0m[0m max_history                = 0
-      [32m+[0m[0m metadata                   = (known after apply)
-      [32m+[0m[0m name                       = "argocd"
-      [32m+[0m[0m namespace                  = "argocd"
-      [32m+[0m[0m pass_credentials           = false
-      [32m+[0m[0m recreate_pods              = false
-      [32m+[0m[0m render_subchart_notes      = true
-      [32m+[0m[0m replace                    = false
-      [32m+[0m[0m repository                 = "https://argoproj.github.io/argo-helm"
-      [32m+[0m[0m reset_values               = false
-      [32m+[0m[0m reuse_values               = false
-      [32m+[0m[0m skip_crds                  = false
-      [32m+[0m[0m status                     = "deployed"
-      [32m+[0m[0m timeout                    = 300
-      [32m+[0m[0m values                     = [
-          [32m+[0m[0m <<-EOT
-                server:
-                  extraArgs:
-                    - --insecure
-                  ingress:
-                    enabled: true
-                    annotations:
-                      kubernetes.io/ingress.class: nginx
-                    hosts:
-                      - argocd.local
-                    tls:
-                      - secretName: argocd-server-tls
-                        hosts:
-                          - argocd.local
-                
-                configs:
-                  secret:
-                    argocdServerAdminPassword: "$2a$10$mYaJ8KqQqQqQqQqQqQqQqO"
-                
-                rbac:
-                  create: true
-                
-                repoServer:
-                  serviceAccount:
-                    create: true
-                
-                applicationSet:
-                  enabled: true
-            EOT,
-        ]
-      [32m+[0m[0m verify                     = false
-      [32m+[0m[0m version                    = "5.51.6"
-      [32m+[0m[0m wait                       = true
-      [32m+[0m[0m wait_for_jobs              = false
-    }
-
-[1m  # helm_release.kube_prometheus_stack[0m will be created
-[0m  [32m+[0m[0m resource "helm_release" "kube_prometheus_stack" {
-      [32m+[0m[0m atomic                     = false
-      [32m+[0m[0m chart                      = "kube-prometheus-stack"
-      [32m+[0m[0m cleanup_on_fail            = false
-      [32m+[0m[0m create_namespace           = true
-      [32m+[0m[0m dependency_update          = false
-      [32m+[0m[0m disable_crd_hooks          = false
-      [32m+[0m[0m disable_openapi_validation = false
-      [32m+[0m[0m disable_webhooks           = false
-      [32m+[0m[0m force_update               = false
-      [32m+[0m[0m id                         = (known after apply)
-      [32m+[0m[0m lint                       = false
-      [32m+[0m[0m manifest                   = (known after apply)
-      [32m+[0m[0m max_history                = 0
-      [32m+[0m[0m metadata                   = (known after apply)
-      [32m+[0m[0m name                       = "kube-prometheus"
-      [32m+[0m[0m namespace                  = "monitoring"
-      [32m+[0m[0m pass_credentials           = false
-      [32m+[0m[0m recreate_pods              = false
-      [32m+[0m[0m render_subchart_notes      = true
-      [32m+[0m[0m replace                    = false
-      [32m+[0m[0m repository                 = "https://prometheus-community.github.io/helm-charts"
-      [32m+[0m[0m reset_values               = false
-      [32m+[0m[0m reuse_values               = false
-      [32m+[0m[0m skip_crds                  = false
-      [32m+[0m[0m status                     = "deployed"
-      [32m+[0m[0m timeout                    = 300
-      [32m+[0m[0m values                     = [
-          [32m+[0m[0m <<-EOT
-                grafana:
-                  adminPassword: "${grafana_admin_password}"
-                  service:
-                    type: LoadBalancer
-                
-                prometheus:
-                  service:
-                    type: LoadBalancer
-                
-                alertmanager:
-                  enabled: true
-                  service:
-                    type: LoadBalancer
-            EOT,
-        ]
-      [32m+[0m[0m verify                     = false
-      [32m+[0m[0m version                    = "55.5.0"
-      [32m+[0m[0m wait                       = true
-      [32m+[0m[0m wait_for_jobs              = false
-    }
-
-[1m  # helm_release.nginx_ingress[0m will be created
-[0m  [32m+[0m[0m resource "helm_release" "nginx_ingress" {
-      [32m+[0m[0m atomic                     = false
-      [32m+[0m[0m chart                      = "ingress-nginx"
-      [32m+[0m[0m cleanup_on_fail            = false
-      [32m+[0m[0m create_namespace           = true
-      [32m+[0m[0m dependency_update          = false
-      [32m+[0m[0m disable_crd_hooks          = false
-      [32m+[0m[0m disable_openapi_validation = false
-      [32m+[0m[0m disable_webhooks           = false
-      [32m+[0m[0m force_update               = false
-      [32m+[0m[0m id                         = (known after apply)
-      [32m+[0m[0m lint                       = false
-      [32m+[0m[0m manifest                   = (known after apply)
-      [32m+[0m[0m max_history                = 0
-      [32m+[0m[0m metadata                   = (known after apply)
-      [32m+[0m[0m name                       = "nginx-ingress"
-      [32m+[0m[0m namespace                  = "ingress-nginx"
-      [32m+[0m[0m pass_credentials           = false
-      [32m+[0m[0m recreate_pods              = false
-      [32m+[0m[0m render_subchart_notes      = true
-      [32m+[0m[0m replace                    = false
-      [32m+[0m[0m repository                 = "https://kubernetes.github.io/ingress-nginx"
-      [32m+[0m[0m reset_values               = false
-      [32m+[0m[0m reuse_values               = false
-      [32m+[0m[0m skip_crds                  = false
-      [32m+[0m[0m status                     = "deployed"
-      [32m+[0m[0m timeout                    = 300
-      [32m+[0m[0m verify                     = false
-      [32m+[0m[0m version                    = "4.12.3"
-      [32m+[0m[0m wait                       = true
-      [32m+[0m[0m wait_for_jobs              = false
-
-      [32m+[0m[0m set {
-          [32m+[0m[0m name  = "controller.ingressClassResource.default"
-          [32m+[0m[0m value = "true"
-            [90m# (1 unchanged attribute hidden)[0m[0m
-        }
-      [32m+[0m[0m set {
-          [32m+[0m[0m name  = "controller.ingressClassResource.name"
-          [32m+[0m[0m value = "nginx"
-            [90m# (1 unchanged attribute hidden)[0m[0m
-        }
-      [32m+[0m[0m set {
-          [32m+[0m[0m name  = "controller.service.type"
-          [32m+[0m[0m value = "LoadBalancer"
-            [90m# (1 unchanged attribute hidden)[0m[0m
-        }
-    }
-
-[1mPlan:[0m 9 to add, 0 to change, 0 to destroy.
+[1mPlan:[0m 5 to add, 0 to change, 0 to destroy.
 [0m
 Changes to Outputs:
   [32m+[0m[0m aks_cluster_fqdn    = (known after apply)
@@ -397,7 +226,6 @@ Changes to Outputs:
   [32m+[0m[0m aks_subnet_id       = (known after apply)
   [32m+[0m[0m client_certificate  = (sensitive value)
   [32m+[0m[0m kube_config_raw     = (sensitive value)
-  [32m+[0m[0m resource_group_name = "linkops-rg"
   [32m+[0m[0m vnet_id             = (known after apply)
   [32m+[0m[0m vnet_name           = "linkops-vnet"
 [90m
@@ -414,13 +242,31 @@ Releasing state lock. This may take a few moments...
 Proceed with deployment? (y/N): 
 [0;34m[INFO][0m Applying Terraform deployment...
 Acquiring state lock. This may take a few moments...
-[0m[1mazurerm_resource_group.main: Creating...[0m[0m
+[0m[1mazurerm_log_analytics_workspace.main: Creating...[0m[0m
+[0m[1mazurerm_virtual_network.main: Creating...[0m[0m
+[0m[1mazurerm_log_analytics_workspace.main: Still creating... [00m10s elapsed][0m[0m
+[0m[1mazurerm_log_analytics_workspace.main: Still creating... [00m19s elapsed][0m[0m
+[0m[1mazurerm_log_analytics_workspace.main: Still creating... [00m29s elapsed][0m[0m
+[0m[1mazurerm_log_analytics_workspace.main: Creation complete after 34s [id=/subscriptions/e864a989-7282-4f8e-8ded-2b68911dcc95/resourceGroups/linkops-rg/providers/Microsoft.OperationalInsights/workspaces/linkops-logs][0m
+[0m[1mazurerm_kubernetes_cluster.main: Creating...[0m[0m
 [31m╷[0m[0m
-[31m│[0m [0m[1m[31mError: [0m[0m[1mA resource with the ID "/subscriptions/e864a989-7282-4f8e-8ded-2b68911dcc95/resourceGroups/linkops-rg" already exists - to be managed via Terraform this resource needs to be imported into the State. Please see the resource documentation for "azurerm_resource_group" for more information.[0m
+[31m│[0m [0m[1m[31mError: [0m[0m[1mcreating/updating Virtual Network (Subscription: "e864a989-7282-4f8e-8ded-2b68911dcc95"
+[31m│[0m [0mResource Group Name: "linkops-rg"
+[31m│[0m [0mVirtual Network Name: "linkops-vnet"): network.VirtualNetworksClient#CreateOrUpdate: Failure sending request: StatusCode=409 -- Original Error: Code="MissingSubscriptionRegistration" Message="The subscription is not registered to use namespace 'Microsoft.Network'. See https://aka.ms/rps-not-found for how to register subscriptions." Details=[{"code":"MissingSubscriptionRegistration","message":"The subscription is not registered to use namespace 'Microsoft.Network'. See https://aka.ms/rps-not-found for how to register subscriptions.","target":"Microsoft.Network"}][0m
 [31m│[0m [0m
-[31m│[0m [0m[0m  with azurerm_resource_group.main,
-[31m│[0m [0m  on main.tf line 2, in resource "azurerm_resource_group" "main":
-[31m│[0m [0m   2: resource "azurerm_resource_group" "main" [4m{[0m[0m
+[31m│[0m [0m[0m  with azurerm_virtual_network.main,
+[31m│[0m [0m  on main.tf line 8, in resource "azurerm_virtual_network" "main":
+[31m│[0m [0m   8: resource "azurerm_virtual_network" "main" [4m{[0m[0m
+[31m│[0m [0m
+[31m╵[0m[0m
+[31m╷[0m[0m
+[31m│[0m [0m[1m[31mError: [0m[0m[1mcreating Kubernetes Cluster (Subscription: "e864a989-7282-4f8e-8ded-2b68911dcc95"
+[31m│[0m [0mResource Group Name: "linkops-rg"
+[31m│[0m [0mKubernetes Cluster Name: "linkops-aks"): managedclusters.ManagedClustersClient#CreateOrUpdate: Failure sending request: StatusCode=0 -- Original Error: Code="NoRegisteredProviderFound" Message="No registered resource provider found for location 'eastus' and API version '2023-04-02-preview' for type 'managedClusters'. The supported api-versions are '2017-08-31, 2018-03-31, 2019-02-01, 2019-04-01, 2019-06-01, 2019-08-01, 2019-10-01, 2019-11-01, 2020-01-01, 2020-02-01, 2020-03-01, 2020-04-01, 2020-06-01, 2020-07-01, 2020-09-01, 2020-11-01, 2020-12-01, 2021-02-01, 2021-03-01, 2021-05-01, 2021-07-01, 2021-08-01, 2021-09-01, 2021-10-01, 2022-01-01, 2022-02-01, 2022-03-01, 2022-04-01, 2022-06-01, 2022-07-01, 2022-08-01, 2022-09-01, 2022-11-01, 2023-01-01, 2023-02-01, 2023-03-01, 2023-04-01, 2023-05-01, 2023-06-01, 2023-07-01, 2023-08-01, 2023-09-01, 2023-09-02-preview, 2023-10-01, 2023-10-02-preview, 2023-11-01, 2023-11-02-preview, 2024-01-01, 2024-01-02-preview, 2024-02-01, 2024-02-02-preview, 2024-03-02-preview, 2024-04-02-preview, 2024-05-01, 2024-05-02-preview, 2024-06-01, 2024-06-02-preview, 2024-07-01, 2024-07-02-preview, 2024-08-01, 2024-08-02-preview, 2024-09-01, 2024-09-02-preview, 2024-10-01, 2024-10-02-preview, 2025-01-01, 2025-01-02-preview, 2025-02-01, 2025-02-02-preview, 2025-03-01, 2025-03-02-preview, 2025-04-01, 2025-04-02-preview, 2025-05-01, 2025-05-02-preview'. The supported locations are 'australiacentral, australiacentral2, australiaeast, australiasoutheast, brazilsouth, brazilsoutheast, canadacentral, canadaeast, centralindia, centralus, chilecentral, eastasia, eastus, eastus2, francecentral, francesouth, germanynorth, germanywestcentral, indonesiacentral, israelcentral, italynorth, japaneast, japanwest, jioindiacentral, jioindiawest, koreacentral, koreasouth, malaysiawest, mexicocentral, newzealandnorth, northcentralus, northeurope, norwayeast, norwaywest, polandcentral, qatarcentral, southafricanorth, southafricawest, southcentralus, southindia, southeastasia, spaincentral, swedencentral, switzerlandnorth, switzerlandwest, uaecentral, uaenorth, uksouth, ukwest, westcentralus, westeurope, westus, westus2, westus3'."[0m
+[31m│[0m [0m
+[31m│[0m [0m[0m  with azurerm_kubernetes_cluster.main,
+[31m│[0m [0m  on main.tf line 29, in resource "azurerm_kubernetes_cluster" "main":
+[31m│[0m [0m  29: resource "azurerm_kubernetes_cluster" "main" [4m{[0m[0m
 [31m│[0m [0m
 [31m╵[0m[0m
 Releasing state lock. This may take a few moments...
