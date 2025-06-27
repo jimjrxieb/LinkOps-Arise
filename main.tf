@@ -1,7 +1,11 @@
 # Resource Group
 resource "azurerm_resource_group" "main" {
-  name     = var.resource_group_name
-  location = var.location
+  name     = "linkops-rg"
+  location = "eastus"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Virtual Network
@@ -29,10 +33,12 @@ resource "azurerm_subnet" "aks" {
 resource "azurerm_kubernetes_cluster" "main" {
   provider            = azurerm.aks
   name                = "linkops-aks"
-  location            = "eastus"
-  resource_group_name = "linkops-rg"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
   dns_prefix          = "linkops"
-  kubernetes_version  = "1.27.9"
+  kubernetes_version  = "1.30.12"
+  sku_tier            = "Premium"
+  support_plan        = "AKSLongTermSupport"
 
   default_node_pool {
     name       = "default"

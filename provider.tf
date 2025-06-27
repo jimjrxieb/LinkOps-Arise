@@ -15,11 +15,13 @@ terraform {
 provider "azurerm" {
   features {}
   subscription_id = "e864a989-7282-4f8e-8ded-2b68911dcc95"
+  skip_provider_registration = true
 }
 
 provider "azurerm" {
   features {}
   subscription_id = "e864a989-7282-4f8e-8ded-2b68911dcc95"
+  skip_provider_registration = true
   alias  = "aks"
 }
 
