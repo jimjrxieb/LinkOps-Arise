@@ -1,6 +1,6 @@
 output "resource_group_name" {
   description = "Name of the resource group"
-  value       = azurerm_resource_group.main.name
+  value       = var.environment == "demo" ? azurerm_resource_group.main_demo[0].name : azurerm_resource_group.main[0].name
 }
 
 output "aks_cluster_name" {

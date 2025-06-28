@@ -1,19 +1,22 @@
-# Resource Group
+# Resource Group (Protected - for non-demo environments)
 resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
   location = var.location
+  count    = var.environment == "demo" ? 0 : 1
+}
 
-  # Demo only — allow destruction
-  lifecycle {
-    prevent_destroy = var.environment != "demo"
-  }
+# Resource Group (Destructible - for demo environment only)
+resource "azurerm_resource_group" "main_demo" {
+  name     = var.resource_group_name
+  location = var.location
+  count    = var.environment == "demo" ? 1 : 0
 }
 
 # Virtual Network
 resource "azurerm_virtual_network" "main" {
   name                = "${var.cluster_name}-vnet"
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
+  resource_group_name = var.environment == "demo" ? azurerm_resource_group.main_demo[0].name : azurerm_resource_group.main[0].name
+  location            = var.environment == "demo" ? azurerm_resource_group.main_demo[0].location : azurerm_resource_group.main[0].location
   address_space       = ["10.0.0.0/16"]
   
   tags = {
@@ -25,7 +28,7 @@ resource "azurerm_virtual_network" "main" {
 # Subnet for AKS
 resource "azurerm_subnet" "aks" {
   name                 = "aks-subnet"
-  resource_group_name  = azurerm_resource_group.main.name
+  resource_group_name  = var.environment == "demo" ? azurerm_resource_group.main_demo[0].name : azurerm_resource_group.main[0].name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = ["10.0.1.0/24"]
 }
@@ -34,8 +37,8 @@ resource "azurerm_subnet" "aks" {
 resource "azurerm_kubernetes_cluster" "main" {
   provider            = azurerm.aks
   name                = var.cluster_name
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = var.environment == "demo" ? azurerm_resource_group.main_demo[0].location : azurerm_resource_group.main[0].location
+  resource_group_name = var.environment == "demo" ? azurerm_resource_group.main_demo[0].name : azurerm_resource_group.main[0].name
   dns_prefix          = var.dns_prefix
   kubernetes_version  = var.kubernetes_version
   sku_tier            = var.sku_tier
@@ -80,8 +83,8 @@ resource "azurerm_kubernetes_cluster_node_pool" "system" {
 # Log Analytics Workspace for AKS monitoring
 resource "azurerm_log_analytics_workspace" "main" {
   name                = "${var.cluster_name}-logs"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = var.environment == "demo" ? azurerm_resource_group.main_demo[0].location : azurerm_resource_group.main[0].location
+  resource_group_name = var.environment == "demo" ? azurerm_resource_group.main_demo[0].name : azurerm_resource_group.main[0].name
   sku                 = "PerGB2018"
   retention_in_days   = var.log_retention_days
   

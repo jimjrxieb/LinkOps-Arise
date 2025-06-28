@@ -1,0 +1,39 @@
+name: Arise CI Check (Terraform)
+
+on: [push, pull_request]
+
+jobs:
+  terraform-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.0"
+
+      - name: Terraform Init - Demo
+        working-directory: demo/terraform
+        run: terraform init
+
+      - name: Terraform Format Check - Demo
+        working-directory: demo/terraform
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Validate - Demo
+        working-directory: demo/terraform
+        run: terraform validate
+
+      - name: Terraform Init - Personal
+        working-directory: personal/terraform
+        run: terraform init
+
+      - name: Terraform Format Check - Personal
+        working-directory: personal/terraform
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Validate - Personal
+        working-directory: personal/terraform
+        run: terraform validate 
