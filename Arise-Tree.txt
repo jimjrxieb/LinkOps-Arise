@@ -1,15 +1,45 @@
 .
 ├── Arise-Tree.txt
+├── MIGRATION-SUMMARY.md
+├── README-ENVIRONMENTS.md
 ├── README.md
-├── backend.tf
-├── deploy.sh
-├── main.tf
-├── monitoring-setup.sh
-├── outputs.tf
-├── provider.tf
-├── scripts
-│   ├── cleanup-secrets.sh
+├── aks_deployment.log
+├── arise-git-push.sh
+├── arise.sh
+├── demo
+│   └── terraform
+│       ├── backend.tf
+│       ├── main.tf
+│       ├── outputs.tf
+│       ├── providers.tf
+│       ├── terraform.tfvars
+│       └── variables.tf
+├── infra-scripts
+│   ├── az-install.sh
+│   ├── manage-environments.sh
+│   ├── monitoring-setup.sh
+│   ├── register_tsi_provider.sh
 │   └── setup-secrets.sh
-└── variables.tf
+├── personal
+│   └── terraform
+│       ├── backend.tf
+│       ├── main.tf
+│       ├── outputs.tf
+│       ├── providers.tf
+│       ├── terraform.tfvars
+│       └── variables.tf
+├── scripts
+│   ├── argocd-values.yaml
+│   ├── cleanup-secrets.sh
+│   ├── import_aks.sh
+│   └── monitoring-values.yaml
+└── shared-modules
+    └── aks
+        ├── argocd-values.yaml
+        ├── main.tf
+        ├── monitoring-values.yaml
+        ├── outputs.tf
+        ├── providers.tf
+        └── variables.tf
 
-1 directory, 11 files
+8 directories, 34 files

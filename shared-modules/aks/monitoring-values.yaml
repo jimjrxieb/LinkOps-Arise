@@ -1,0 +1,13 @@
+grafana:
+  adminPassword: "${grafana_admin_password}"
+  service:
+    type: LoadBalancer
+
+prometheus:
+  service:
+    type: LoadBalancer
+
+alertmanager:
+  enabled: true
+  service:
+    type: LoadBalancer 
