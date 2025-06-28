@@ -3,8 +3,9 @@ resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
   location = var.location
 
+  # Demo only — allow destruction
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = var.environment != "demo"
   }
 }
 
