@@ -6,11 +6,11 @@ server:
     annotations:
       kubernetes.io/ingress.class: nginx
     hosts:
-      - argocd.local
+    - argocd.local
     tls:
-      - secretName: argocd-server-tls
-        hosts:
-          - argocd.local
+    - secretName: argocd-server-tls
+      hosts:
+      - argocd.local
 
 configs:
   secret:

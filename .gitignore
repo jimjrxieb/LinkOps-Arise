@@ -3,3 +3,10 @@
 *.tfstate
 *.tfstate.backup
 terraform.tfvars 
+# Optional but smart
+*.tfvars
+*.auto.tfvars
+crash.log
+override.tf
+override.tf.json
+terraform.tfvars.json
