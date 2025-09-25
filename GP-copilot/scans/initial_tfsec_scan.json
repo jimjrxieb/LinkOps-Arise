@@ -1,0 +1,176 @@
+{
+  "findings": [
+    {
+      "rule_id": "AVD-AZU-0041",
+      "rule_category": "AVD",
+      "severity": "critical",
+      "normalized_severity": "critical",
+      "title": "Cluster does not limit API access to specific IP addresses.",
+      "message": "Cluster does not limit API access to specific IP addresses.",
+      "file": "/home/jimmie/linkops-industries/James-OS/james-copilots/GP-copilot/GP-PROJECTS/LinkOps-Arise/shared-modules/aks/main.tf",
+      "line_start": 37,
+      "line_end": 73,
+      "impact": "Any IP can interact with the API server",
+      "resolution": "Limit the access to the API server to a limited IP range",
+      "resource": "module.aks",
+      "provider": "azure",
+      "links": [
+        "https://aquasecurity.github.io/tfsec/v1.28.1/checks/azure/container/limit-authorized-ips/",
+        "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/kubernetes_cluster#api_server_authorized_ip_ranges"
+      ]
+    },
+    {
+      "rule_id": "AVD-AZU-0042",
+      "rule_category": "AVD",
+      "severity": "high",
+      "normalized_severity": "high",
+      "title": "Cluster has RBAC disabled",
+      "message": "Cluster has RBAC disabled",
+      "file": "/home/jimmie/linkops-industries/James-OS/james-copilots/GP-copilot/GP-PROJECTS/LinkOps-Arise/shared-modules/aks/main.tf",
+      "line_start": 37,
+      "line_end": 73,
+      "impact": "No role based access control is in place for the AKS cluster",
+      "resolution": "Enable RBAC",
+      "resource": "module.aks",
+      "provider": "azure",
+      "links": [
+        "https://aquasecurity.github.io/tfsec/v1.28.1/checks/azure/container/use-rbac-permissions/",
+        "https://www.terraform.io/docs/providers/azurerm/r/kubernetes_cluster.html#role_based_access_control"
+      ]
+    },
+    {
+      "rule_id": "AVD-AZU-0041",
+      "rule_category": "AVD",
+      "severity": "critical",
+      "normalized_severity": "critical",
+      "title": "Cluster does not limit API access to specific IP addresses.",
+      "message": "Cluster does not limit API access to specific IP addresses.",
+      "file": "/home/jimmie/linkops-industries/James-OS/james-copilots/GP-copilot/GP-PROJECTS/LinkOps-Arise/shared-modules/aks/main.tf",
+      "line_start": 37,
+      "line_end": 73,
+      "impact": "Any IP can interact with the API server",
+      "resolution": "Limit the access to the API server to a limited IP range",
+      "resource": "module.aks",
+      "provider": "azure",
+      "links": [
+        "https://aquasecurity.github.io/tfsec/v1.28.1/checks/azure/container/limit-authorized-ips/",
+        "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/kubernetes_cluster#api_server_authorized_ip_ranges"
+      ]
+    },
+    {
+      "rule_id": "AVD-AZU-0042",
+      "rule_category": "AVD",
+      "severity": "high",
+      "normalized_severity": "high",
+      "title": "Cluster has RBAC disabled",
+      "message": "Cluster has RBAC disabled",
+      "file": "/home/jimmie/linkops-industries/James-OS/james-copilots/GP-copilot/GP-PROJECTS/LinkOps-Arise/shared-modules/aks/main.tf",
+      "line_start": 37,
+      "line_end": 73,
+      "impact": "No role based access control is in place for the AKS cluster",
+      "resolution": "Enable RBAC",
+      "resource": "module.aks",
+      "provider": "azure",
+      "links": [
+        "https://aquasecurity.github.io/tfsec/v1.28.1/checks/azure/container/use-rbac-permissions/",
+        "https://www.terraform.io/docs/providers/azurerm/r/kubernetes_cluster.html#role_based_access_control"
+      ]
+    },
+    {
+      "rule_id": "AVD-AZU-0041",
+      "rule_category": "AVD",
+      "severity": "critical",
+      "normalized_severity": "critical",
+      "title": "Cluster does not limit API access to specific IP addresses.",
+      "message": "Cluster does not limit API access to specific IP addresses.",
+      "file": "/home/jimmie/linkops-industries/James-OS/james-copilots/GP-copilot/GP-PROJECTS/LinkOps-Arise/shared-modules/aks/main.tf",
+      "line_start": 37,
+      "line_end": 73,
+      "impact": "Any IP can interact with the API server",
+      "resolution": "Limit the access to the API server to a limited IP range",
+      "resource": "azurerm_kubernetes_cluster.main",
+      "provider": "azure",
+      "links": [
+        "https://aquasecurity.github.io/tfsec/v1.28.1/checks/azure/container/limit-authorized-ips/",
+        "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/kubernetes_cluster#api_server_authorized_ip_ranges"
+      ]
+    },
+    {
+      "rule_id": "AVD-AZU-0042",
+      "rule_category": "AVD",
+      "severity": "high",
+      "normalized_severity": "high",
+      "title": "Cluster has RBAC disabled",
+      "message": "Cluster has RBAC disabled",
+      "file": "/home/jimmie/linkops-industries/James-OS/james-copilots/GP-copilot/GP-PROJECTS/LinkOps-Arise/shared-modules/aks/main.tf",
+      "line_start": 37,
+      "line_end": 73,
+      "impact": "No role based access control is in place for the AKS cluster",
+      "resolution": "Enable RBAC",
+      "resource": "azurerm_kubernetes_cluster.main",
+      "provider": "azure",
+      "links": [
+        "https://aquasecurity.github.io/tfsec/v1.28.1/checks/azure/container/use-rbac-permissions/",
+        "https://www.terraform.io/docs/providers/azurerm/r/kubernetes_cluster.html#role_based_access_control"
+      ]
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "terraform_files_scanned": 14,
+    "severity_breakdown": {
+      "critical": 3,
+      "high": 3,
+      "medium": 0,
+      "low": 0
+    },
+    "rule_categories": {
+      "AVD": 6
+    },
+    "providers_with_issues": [
+      "azure"
+    ],
+    "providers_detected": [
+      "azure"
+    ]
+  },
+  "target": "/home/jimmie/linkops-industries/James-OS/james-copilots/GP-copilot/GP-PROJECTS/LinkOps-Arise",
+  "tool": "tfsec",
+  "timestamp": "2025-09-25T08:05:56.093860",
+  "scan_id": "tfsec_20250925_080556_093",
+  "terraform_context": {
+    "terraform_files_count": 14,
+    "tfvars_files_count": 0,
+    "has_main_tf": true,
+    "has_variables_tf": true,
+    "has_outputs_tf": true,
+    "has_terraform_directory": false,
+    "has_state_files": false,
+    "providers_detected": [
+      "azure"
+    ],
+    "terraform_files": [
+      "personal/terraform/main.tf",
+      "personal/terraform/variables.tf",
+      "personal/terraform/backend.tf",
+      "personal/terraform/providers.tf",
+      "personal/terraform/outputs.tf",
+      "demo/terraform/main.tf",
+      "demo/terraform/variables.tf",
+      "demo/terraform/backend.tf",
+      "demo/terraform/providers.tf",
+      "demo/terraform/outputs.tf",
+      "shared-modules/aks/main.tf",
+      "shared-modules/aks/variables.tf",
+      "shared-modules/aks/providers.tf",
+      "shared-modules/aks/outputs.tf"
+    ]
+  },
+  "metadata": {
+    "tfsec_version": "latest",
+    "scan_performance": {
+      "files_scanned": 14,
+      "total_findings": 6
+    }
+  }
+}

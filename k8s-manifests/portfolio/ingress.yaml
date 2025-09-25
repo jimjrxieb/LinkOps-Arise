@@ -1,0 +1,72 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: portfolio-ingress
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: portfolio-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: portfolio.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ui
+            port:
+              number: 80
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api
+            port:
+              number: 8000
+      - path: /avatar
+        pathType: Prefix
+        backend:
+          service:
+            name: avatar-creation
+            port:
+              number: 8000
+      - path: /rag
+        pathType: Prefix
+        backend:
+          service:
+            name: rag-pipeline
+            port:
+              number: 8000
+      - path: /jupyter
+        pathType: Prefix
+        backend:
+          service:
+            name: rag-pipeline
+            port:
+              number: 8888
+---
+# LoadBalancer service for local development access
+apiVersion: v1
+kind: Service
+metadata:
+  name: portfolio-loadbalancer
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: portfolio-loadbalancer
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: ui
+  ports:
+  - port: 80
+    targetPort: 80
+    name: http

@@ -1,0 +1,13 @@
+{
+  "findings": [],
+  "summary": {
+    "total": 0,
+    "languages_detected": {
+      "yaml": 6
+    }
+  },
+  "target": "/home/jimmie/linkops-industries/James-OS/james-copilots/GP-copilot/GP-PROJECTS/LinkOps-Arise",
+  "tool": "semgrep",
+  "timestamp": "2025-09-25T08:02:32.906117",
+  "scan_id": "semgrep_20250925_080232_906"
+}

@@ -1,0 +1,17 @@
+{
+  "findings": [],
+  "summary": {
+    "total": 0,
+    "secrets_found": 0
+  },
+  "target": "/home/jimmie/linkops-industries/James-OS/james-copilots/GP-copilot/GP-PROJECTS/LinkOps-Arise",
+  "tool": "gitleaks",
+  "scan_mode": "detect",
+  "timestamp": "2025-09-25T08:00:38.518761",
+  "scan_id": "gitleaks_20250925_080038_518",
+  "repo_info": {
+    "current_branch": "main",
+    "commit_count": 12,
+    "is_git_repo": true
+  }
+}

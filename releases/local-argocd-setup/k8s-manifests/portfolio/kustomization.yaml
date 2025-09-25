@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: portfolio
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - chromadb.yaml
+  - avatar-creation.yaml
+  - rag-pipeline.yaml
+  - api.yaml
+  - ui.yaml
+  - ingress.yaml
+
+commonLabels:
+  app.kubernetes.io/name: portfolio
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/managed-by: argocd
+
+images:
+  - name: ghcr.io/jimjrxieb/portfolio-chromadb
+    newTag: latest
+  - name: ghcr.io/jimjrxieb/portfolio-avatar-creation
+    newTag: latest
+  - name: ghcr.io/jimjrxieb/portfolio-rag-pipeline
+    newTag: latest
+  - name: ghcr.io/jimjrxieb/portfolio-api
+    newTag: latest
+  - name: ghcr.io/jimjrxieb/portfolio-ui
+    newTag: latest

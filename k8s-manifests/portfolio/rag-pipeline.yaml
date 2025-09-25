@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-pipeline
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: rag-pipeline
+    app.kubernetes.io/component: service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rag-pipeline
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rag-pipeline
+    spec:
+      containers:
+      - name: rag-pipeline
+        image: ghcr.io/jimjrxieb/portfolio-rag-pipeline:latest
+        ports:
+        - containerPort: 8888
+          name: jupyter
+        - containerPort: 8000
+          name: api
+        env:
+        - name: JUPYTER_ENABLE_LAB
+          valueFrom:
+            configMapKeyRef:
+              name: portfolio-config
+              key: JUPYTER_ENABLE_LAB
+        - name: JUPYTER_TOKEN
+          valueFrom:
+            configMapKeyRef:
+              name: portfolio-config
+              key: JUPYTER_TOKEN
+        - name: CHROMADB_URL
+          valueFrom:
+            configMapKeyRef:
+              name: portfolio-config
+              key: CHROMADB_URL
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: portfolio-secrets
+              key: OPENAI_API_KEY
+        volumeMounts:
+        - name: rag-data
+          mountPath: /app/data
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+      volumes:
+      - name: rag-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rag-pipeline
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: rag-pipeline
+spec:
+  selector:
+    app.kubernetes.io/name: rag-pipeline
+  ports:
+  - port: 8888
+    targetPort: 8888
+    name: jupyter
+  - port: 8000
+    targetPort: 8000
+    name: api

@@ -1,0 +1,53 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: portfolio-project
+  namespace: argocd
+spec:
+  description: Portfolio application project
+  sourceRepos:
+  - 'https://github.com/jimjrxieb/Portfolio.git'
+  - 'https://github.com/jimjrxieb/LinkOps-Arise.git'
+  destinations:
+  - namespace: portfolio
+    server: https://kubernetes.default.svc
+  - namespace: monitoring
+    server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  namespaceResourceWhitelist:
+  - group: '*'
+    kind: '*'
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: portfolio-monitoring
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: portfolio-monitoring
+    app.kubernetes.io/component: monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: portfolio-project
+  source:
+    repoURL: https://github.com/jimjrxieb/Portfolio.git
+    targetRevision: main
+    path: k8s/monitoring
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 2
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m

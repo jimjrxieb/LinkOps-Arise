@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: avatar-creation
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: avatar-creation
+    app.kubernetes.io/component: service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: avatar-creation
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: avatar-creation
+    spec:
+      containers:
+      - name: avatar-creation
+        image: ghcr.io/jimjrxieb/portfolio-avatar-creation:latest
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: AVATAR_CHARACTER
+          valueFrom:
+            configMapKeyRef:
+              name: portfolio-config
+              key: AVATAR_CHARACTER
+        - name: AVATAR_DESCRIPTION
+          valueFrom:
+            configMapKeyRef:
+              name: portfolio-config
+              key: AVATAR_DESCRIPTION
+        - name: GPT_MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: portfolio-config
+              key: GPT_MODEL
+        - name: GPT_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: portfolio-secrets
+              key: OPENAI_API_KEY
+        - name: CHROMADB_URL
+          valueFrom:
+            configMapKeyRef:
+              name: portfolio-config
+              key: CHROMADB_URL
+        volumeMounts:
+        - name: avatars-data
+          mountPath: /app/avatars
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: avatars-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: avatar-creation
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: avatar-creation
+spec:
+  selector:
+    app.kubernetes.io/name: avatar-creation
+  ports:
+  - port: 8000
+    targetPort: 8000
+    name: http

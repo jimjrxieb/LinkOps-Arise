@@ -1,0 +1,11 @@
+{
+  "findings": [],
+  "summary": {
+    "total": 0,
+    "message": "No Python files found"
+  },
+  "target": "/home/jimmie/linkops-industries/James-OS/james-copilots/GP-copilot/GP-PROJECTS/LinkOps-Arise",
+  "tool": "bandit",
+  "timestamp": "2025-09-25T08:00:12.341830",
+  "scan_id": "bandit_20250925_080012_341"
+}
