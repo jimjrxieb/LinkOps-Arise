@@ -105,4 +105,23 @@ variable "grafana_admin_password" {
   description = "Admin password for Grafana"
   sensitive   = true
   default     = null
+}
+
+# Security-related variables for AKS
+variable "api_server_authorized_ip_ranges" {
+  type        = list(string)
+  description = "List of authorized IP ranges for API server access. Must be configured for production environments"
+  default     = ["127.0.0.1/32"] # SECURITY: Very restrictive default - environments must explicitly configure appropriate ranges
+}
+
+variable "enable_azure_rbac" {
+  type        = bool
+  description = "Enable Azure RBAC for Kubernetes authorization"
+  default     = true
+}
+
+variable "admin_group_object_ids" {
+  type        = list(string)
+  description = "List of Azure AD group object IDs that should have cluster admin access"
+  default     = []
 } 

@@ -18,7 +18,7 @@ resource "azurerm_virtual_network" "main" {
   resource_group_name = var.environment == "demo" ? azurerm_resource_group.main_demo[0].name : azurerm_resource_group.main[0].name
   location            = var.environment == "demo" ? azurerm_resource_group.main_demo[0].location : azurerm_resource_group.main[0].location
   address_space       = ["10.0.0.0/16"]
-  
+
   tags = {
     Environment = var.environment
     Project     = var.project
@@ -34,6 +34,7 @@ resource "azurerm_subnet" "aks" {
 }
 
 # AKS Cluster
+#tfsec:ignore:AVD-AZU-0041 # False positive - TFSec v1.28.1 doesn't recognize AzureRM 4.0+ api_server_access_profile syntax, but authorized IP ranges are configured
 resource "azurerm_kubernetes_cluster" "main" {
   provider            = azurerm.aks
   name                = var.cluster_name
@@ -43,6 +44,14 @@ resource "azurerm_kubernetes_cluster" "main" {
   kubernetes_version  = var.kubernetes_version
   sku_tier            = var.sku_tier
   support_plan        = var.support_plan
+
+  # Security Fix: Enable RBAC (fixes AVD-AZU-0042)
+  role_based_access_control_enabled = true
+
+  # Security Fix: Restrict API server access (fixes AVD-AZU-0041) - AzureRM 4.0+ syntax
+  api_server_access_profile {
+    authorized_ip_ranges = var.api_server_authorized_ip_ranges
+  }
 
   default_node_pool {
     name       = "default"
@@ -54,12 +63,18 @@ resource "azurerm_kubernetes_cluster" "main" {
     type = "SystemAssigned"
   }
 
+  # Enable Azure AD integration for enhanced RBAC (AzureRM 4.0+ syntax)
+  azure_active_directory_role_based_access_control {
+    azure_rbac_enabled     = var.enable_azure_rbac
+    admin_group_object_ids = var.admin_group_object_ids
+  }
+
   network_profile {
-    network_plugin     = "azure"
-    network_policy     = "azure"
-    load_balancer_sku  = "standard"
-    service_cidr       = "10.0.2.0/24"
-    dns_service_ip     = "10.0.2.10"
+    network_plugin    = "azure"
+    network_policy    = "azure"
+    load_balancer_sku = "standard"
+    service_cidr      = "10.0.2.0/24"
+    dns_service_ip    = "10.0.2.10"
   }
 
   oms_agent {
@@ -87,7 +102,7 @@ resource "azurerm_log_analytics_workspace" "main" {
   resource_group_name = var.environment == "demo" ? azurerm_resource_group.main_demo[0].name : azurerm_resource_group.main[0].name
   sku                 = "PerGB2018"
   retention_in_days   = var.log_retention_days
-  
+
   tags = {
     Environment = var.environment
     Project     = var.project
