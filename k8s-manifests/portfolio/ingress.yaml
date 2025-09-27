@@ -7,13 +7,25 @@ metadata:
     app.kubernetes.io/name: portfolio-ingress
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    # CKS Security: Enable TLS and restrict CORS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # Restrict CORS to specific domains instead of wildcard
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://portfolio.local,https://localhost:3000"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - portfolio.local
+    secretName: portfolio-tls
   rules:
   - host: portfolio.local
     http:

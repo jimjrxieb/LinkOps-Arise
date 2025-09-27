@@ -1,0 +1,138 @@
+# CKS Mutating Policies: Automatically Add Security Configurations
+apiVersion: mutations.gatekeeper.sh/v1alpha1
+kind: Assign
+metadata:
+  name: add-security-context
+  labels:
+    cks-domain: "cluster-hardening"
+    policy-type: "mutation"
+spec:
+  applyTo:
+  - groups: [""]
+    kinds: ["Pod"]
+    versions: ["v1"]
+  match:
+    scope: Namespaced
+    kinds:
+    - apiGroups: [""]
+      kinds: ["Pod"]
+    excludedNamespaces: ["kube-system", "gatekeeper-system", "falco-system"]
+  location: "spec.securityContext.runAsNonRoot"
+  parameters:
+    assign:
+      value: true
+---
+apiVersion: mutations.gatekeeper.sh/v1alpha1
+kind: Assign
+metadata:
+  name: add-read-only-root-filesystem
+  labels:
+    cks-domain: "cluster-hardening"
+    policy-type: "mutation"
+spec:
+  applyTo:
+  - groups: [""]
+    kinds: ["Pod"]
+    versions: ["v1"]
+  match:
+    scope: Namespaced
+    kinds:
+    - apiGroups: [""]
+      kinds: ["Pod"]
+    excludedNamespaces: ["kube-system", "gatekeeper-system", "falco-system"]
+  location: "spec.containers[name:*].securityContext.readOnlyRootFilesystem"
+  parameters:
+    assign:
+      value: true
+---
+apiVersion: mutations.gatekeeper.sh/v1alpha1
+kind: Assign
+metadata:
+  name: drop-all-capabilities
+  labels:
+    cks-domain: "cluster-hardening"
+    policy-type: "mutation"
+spec:
+  applyTo:
+  - groups: [""]
+    kinds: ["Pod"]
+    versions: ["v1"]
+  match:
+    scope: Namespaced
+    kinds:
+    - apiGroups: [""]
+      kinds: ["Pod"]
+    excludedNamespaces: ["kube-system", "gatekeeper-system", "falco-system"]
+  location: "spec.containers[name:*].securityContext.capabilities.drop"
+  parameters:
+    assign:
+      value: ["ALL"]
+---
+apiVersion: mutations.gatekeeper.sh/v1alpha1
+kind: Assign
+metadata:
+  name: set-seccomp-profile
+  labels:
+    cks-domain: "cluster-hardening"
+    policy-type: "mutation"
+spec:
+  applyTo:
+  - groups: [""]
+    kinds: ["Pod"]
+    versions: ["v1"]
+  match:
+    scope: Namespaced
+    kinds:
+    - apiGroups: [""]
+      kinds: ["Pod"]
+    excludedNamespaces: ["kube-system", "gatekeeper-system", "falco-system"]
+  location: "spec.securityContext.seccompProfile"
+  parameters:
+    assign:
+      value:
+        type: "RuntimeDefault"
+---
+# Mutating policy to add required labels
+apiVersion: mutations.gatekeeper.sh/v1alpha1
+kind: Assign
+metadata:
+  name: add-managed-by-label
+  labels:
+    cks-domain: "governance"
+    policy-type: "mutation"
+spec:
+  applyTo:
+  - groups: [""]
+    kinds: ["Pod", "Service", "ConfigMap"]
+    versions: ["v1"]
+  - groups: ["apps"]
+    kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    versions: ["v1"]
+  match:
+    scope: Namespaced
+    excludedNamespaces: ["kube-system", "gatekeeper-system"]
+  location: "metadata.labels.\"app.kubernetes.io/managed-by\""
+  parameters:
+    assign:
+      value: "gatekeeper"
+---
+# Mutating policy to add security annotations
+apiVersion: mutations.gatekeeper.sh/v1alpha1
+kind: Assign
+metadata:
+  name: add-security-scan-annotation
+  labels:
+    cks-domain: "supply-chain-security"
+    policy-type: "mutation"
+spec:
+  applyTo:
+  - groups: [""]
+    kinds: ["Pod"]
+    versions: ["v1"]
+  match:
+    scope: Namespaced
+    excludedNamespaces: ["kube-system", "gatekeeper-system"]
+  location: "metadata.annotations.\"security.linkops.io/scanned\""
+  parameters:
+    assign:
+      value: "pending"

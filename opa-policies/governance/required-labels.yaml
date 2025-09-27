@@ -1,0 +1,114 @@
+# CKS Policy: Required Labels and Annotations
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredlabels
+  labels:
+    cks-domain: "cluster-setup"
+    policy-type: "governance"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredLabels
+      validation:
+        properties:
+          labels:
+            type: array
+            items:
+              type: string
+            description: "List of required labels"
+          message:
+            type: string
+            description: "Custom violation message"
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredlabels
+
+        violation[{"msg": msg}] {
+          required := input.parameters.labels
+          provided := input.review.object.metadata.labels
+          missing := required[_]
+          not provided[missing]
+          msg := sprintf("Missing required label: %v", [missing])
+        }
+---
+apiVersion: config.gatekeeper.sh/v1alpha1
+kind: K8sRequiredLabels
+metadata:
+  name: must-have-security-labels
+  labels:
+    cks-enforcement: "governance"
+spec:
+  enforcementAction: warn
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod", "Service", "ConfigMap", "Secret"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    excludedNamespaces:
+      - "kube-system"
+      - "gatekeeper-system"
+  parameters:
+    labels:
+      - "app.kubernetes.io/name"
+      - "app.kubernetes.io/version"
+      - "app.kubernetes.io/managed-by"
+    message: "All resources must have standard Kubernetes labels"
+---
+# CKS Policy: Required Annotations for Security
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredannotations
+  labels:
+    cks-domain: "cluster-setup"
+    policy-type: "governance"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredAnnotations
+      validation:
+        properties:
+          annotations:
+            type: array
+            items:
+              type: string
+            description: "List of required annotations"
+          message:
+            type: string
+            description: "Custom violation message"
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredannotations
+
+        violation[{"msg": msg}] {
+          required := input.parameters.annotations
+          provided := input.review.object.metadata.annotations
+          missing := required[_]
+          not provided[missing]
+          msg := sprintf("Missing required annotation: %v", [missing])
+        }
+---
+apiVersion: config.gatekeeper.sh/v1alpha1
+kind: K8sRequiredAnnotations
+metadata:
+  name: must-have-security-annotations
+  labels:
+    cks-enforcement: "governance"
+spec:
+  enforcementAction: warn
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Service"]
+      - apiGroups: ["networking.k8s.io"]
+        kinds: ["Ingress"]
+  parameters:
+    annotations:
+      - "security.linkops.io/reviewed"
+    message: "Services and Ingresses must have security review annotation"

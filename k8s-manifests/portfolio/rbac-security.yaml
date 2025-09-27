@@ -1,0 +1,302 @@
+# CKS Enhanced RBAC: Least Privilege Access Control
+
+# Portfolio application service account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: portfolio-app
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: portfolio
+    app.kubernetes.io/component: service-account
+    cks-domain: "cluster-hardening"
+  annotations:
+    # AWS IRSA annotation (will be populated by Terraform)
+    eks.amazonaws.com/role-arn: ""
+automountServiceAccountToken: false  # CKS Security: Disable auto-mounting
+---
+# Read-only service account for monitoring
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: portfolio-monitoring
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: portfolio
+    app.kubernetes.io/component: monitoring
+    cks-domain: "cluster-hardening"
+automountServiceAccountToken: false
+---
+# Portfolio application role (minimal permissions)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: portfolio-app-role
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: portfolio
+    app.kubernetes.io/component: rbac
+    cks-domain: "cluster-hardening"
+rules:
+# Allow reading own ConfigMaps and Secrets
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list"]
+  resourceNames: ["portfolio-config", "portfolio-secrets"]
+# Allow reading own service for service discovery
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get"]
+  resourceNames: ["api", "ui", "chromadb", "avatar-creation", "rag-pipeline"]
+# Allow pod self-inspection for health checks
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get"]
+  resourceNames: []  # Restrict to own pod only via subject
+---
+# Portfolio monitoring role (read-only)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: portfolio-monitoring-role
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: portfolio
+    app.kubernetes.io/component: monitoring
+    cks-domain: "cluster-hardening"
+rules:
+# Read-only access to pods for metrics
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+# Read-only access to metrics
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["pods", "nodes"]
+  verbs: ["get", "list"]
+---
+# Bind portfolio app role to service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: portfolio-app-binding
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: portfolio
+    app.kubernetes.io/component: rbac
+    cks-domain: "cluster-hardening"
+subjects:
+- kind: ServiceAccount
+  name: portfolio-app
+  namespace: portfolio
+roleRef:
+  kind: Role
+  name: portfolio-app-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Bind monitoring role to monitoring service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: portfolio-monitoring-binding
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: portfolio
+    app.kubernetes.io/component: monitoring
+    cks-domain: "cluster-hardening"
+subjects:
+- kind: ServiceAccount
+  name: portfolio-monitoring
+  namespace: portfolio
+roleRef:
+  kind: Role
+  name: portfolio-monitoring-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# ClusterRole for cross-namespace monitoring (limited scope)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: portfolio-cluster-monitoring
+  labels:
+    app.kubernetes.io/name: portfolio
+    app.kubernetes.io/component: cluster-monitoring
+    cks-domain: "cluster-hardening"
+rules:
+# Allow reading node metrics for cluster-wide monitoring
+- apiGroups: [""]
+  resources: ["nodes", "nodes/metrics"]
+  verbs: ["get", "list"]
+# Allow reading namespace information
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list"]
+  resourceNames: ["portfolio", "monitoring"]
+---
+# ClusterRoleBinding for portfolio monitoring (restricted)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: portfolio-cluster-monitoring-binding
+  labels:
+    app.kubernetes.io/name: portfolio
+    app.kubernetes.io/component: cluster-monitoring
+    cks-domain: "cluster-hardening"
+subjects:
+- kind: ServiceAccount
+  name: portfolio-monitoring
+  namespace: portfolio
+roleRef:
+  kind: ClusterRole
+  name: portfolio-cluster-monitoring
+  apiGroup: rbac.authorization.k8s.io
+---
+# Pod Security Policy User (if PSPs are enabled)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: portfolio-psp-user
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: portfolio
+    app.kubernetes.io/component: psp
+    cks-domain: "cluster-hardening"
+rules:
+- apiGroups: ["policy"]
+  resources: ["podsecuritypolicies"]
+  verbs: ["use"]
+  resourceNames: ["restricted-psp"]
+---
+# Bind PSP role to portfolio service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: portfolio-psp-binding
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: portfolio
+    app.kubernetes.io/component: psp
+    cks-domain: "cluster-hardening"
+subjects:
+- kind: ServiceAccount
+  name: portfolio-app
+  namespace: portfolio
+roleRef:
+  kind: Role
+  name: portfolio-psp-user
+  apiGroup: rbac.authorization.k8s.io
+---
+# Security-focused service account for external secrets
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: external-secrets-reader
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: external-secrets
+    app.kubernetes.io/component: secrets
+    cks-domain: "cluster-hardening"
+  annotations:
+    # AWS IRSA for Secrets Manager access
+    eks.amazonaws.com/role-arn: ""
+automountServiceAccountToken: true  # Required for External Secrets Operator
+---
+# External secrets role (minimal AWS access)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: external-secrets-role
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: external-secrets
+    app.kubernetes.io/component: secrets
+    cks-domain: "cluster-hardening"
+rules:
+# Allow managing only portfolio secrets
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create", "update", "patch", "delete"]
+  resourceNames: ["portfolio-secrets"]
+# Allow reading SecretStore and ExternalSecret CRDs
+- apiGroups: ["external-secrets.io"]
+  resources: ["secretstores", "externalsecrets"]
+  verbs: ["get", "list", "watch"]
+---
+# Bind external secrets role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: external-secrets-binding
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: external-secrets
+    app.kubernetes.io/component: secrets
+    cks-domain: "cluster-hardening"
+subjects:
+- kind: ServiceAccount
+  name: external-secrets-reader
+  namespace: portfolio
+roleRef:
+  kind: Role
+  name: external-secrets-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Security audit service account (for CKS scenarios)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: security-auditor
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: security
+    app.kubernetes.io/component: auditor
+    cks-domain: "cluster-hardening"
+automountServiceAccountToken: false
+---
+# Security auditor role (read-only security inspection)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: security-auditor-role
+  labels:
+    app.kubernetes.io/name: security
+    app.kubernetes.io/component: auditor
+    cks-domain: "cluster-hardening"
+rules:
+# Read-only access to security-related resources
+- apiGroups: [""]
+  resources: ["pods", "services", "configmaps", "secrets", "serviceaccounts"]
+  verbs: ["get", "list"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "statefulsets", "daemonsets"]
+  verbs: ["get", "list"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["networkpolicies"]
+  verbs: ["get", "list"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+  verbs: ["get", "list"]
+- apiGroups: ["policy"]
+  resources: ["podsecuritypolicies"]
+  verbs: ["get", "list"]
+# OPA Gatekeeper resources
+- apiGroups: ["templates.gatekeeper.sh", "config.gatekeeper.sh"]
+  resources: ["*"]
+  verbs: ["get", "list"]
+---
+# Bind security auditor role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: security-auditor-binding
+  labels:
+    app.kubernetes.io/name: security
+    app.kubernetes.io/component: auditor
+    cks-domain: "cluster-hardening"
+subjects:
+- kind: ServiceAccount
+  name: security-auditor
+  namespace: portfolio
+roleRef:
+  kind: ClusterRole
+  name: security-auditor-role
+  apiGroup: rbac.authorization.k8s.io

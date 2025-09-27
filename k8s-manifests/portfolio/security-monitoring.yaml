@@ -1,0 +1,270 @@
+# CKS Security Monitoring: ServiceMonitor and AlertRules for Portfolio
+
+# ServiceMonitor for Prometheus to scrape portfolio metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: portfolio-security-monitoring
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: portfolio
+    app.kubernetes.io/component: monitoring
+    cks-domain: "monitoring-logging-runtime-security"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+  - port: http
+    path: /health
+    interval: 10s
+    scrapeTimeout: 5s
+  namespaceSelector:
+    matchNames:
+    - portfolio
+---
+# PrometheusRule for security-focused alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: portfolio-security-alerts
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: portfolio
+    app.kubernetes.io/component: security-alerts
+    cks-domain: "monitoring-logging-runtime-security"
+spec:
+  groups:
+  - name: portfolio.security
+    interval: 30s
+    rules:
+    # Pod Security Violations
+    - alert: PodSecurityViolation
+      expr: increase(gatekeeper_violations_total{namespace="portfolio"}[5m]) > 0
+      for: 0m
+      labels:
+        severity: warning
+        category: security
+        cks_domain: cluster_hardening
+      annotations:
+        summary: "Pod security policy violation detected"
+        description: "Pod security violation in portfolio namespace: {{ $labels.violation_kind }}"
+
+    # Network Policy Violations
+    - alert: NetworkPolicyDenial
+      expr: increase(calico_denied_packets_total{namespace="portfolio"}[5m]) > 10
+      for: 2m
+      labels:
+        severity: warning
+        category: network_security
+        cks_domain: minimize_microservice_vulnerabilities
+      annotations:
+        summary: "High network policy denial rate"
+        description: "Network policy denials increased in portfolio namespace"
+
+    # RBAC Violations
+    - alert: RBACUnauthorizedAccess
+      expr: increase(apiserver_audit_events_total{objectRef_namespace="portfolio",verb!~"get|list|watch"}[5m]) > 0
+      for: 0m
+      labels:
+        severity: critical
+        category: rbac_security
+        cks_domain: cluster_hardening
+      annotations:
+        summary: "Unauthorized API access attempt"
+        description: "Unauthorized access attempt to portfolio namespace resources"
+
+    # High privilege escalation attempts
+    - alert: PrivilegeEscalationAttempt
+      expr: |
+        (
+          increase(container_processes_total{namespace="portfolio"}[5m]) > 100
+        ) or (
+          increase(container_file_descriptors{namespace="portfolio"}[5m]) > 1000
+        )
+      for: 5m
+      labels:
+        severity: critical
+        category: runtime_security
+        cks_domain: monitoring_logging_runtime_security
+      annotations:
+        summary: "Potential privilege escalation detected"
+        description: "Unusual process/file activity in portfolio namespace"
+
+    # Container restart rate (security concern)
+    - alert: HighContainerRestartRate
+      expr: rate(kube_pod_container_status_restarts_total{namespace="portfolio"}[15m]) > 0.1
+      for: 5m
+      labels:
+        severity: warning
+        category: stability_security
+        cks_domain: monitoring_logging_runtime_security
+      annotations:
+        summary: "High container restart rate"
+        description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is restarting frequently"
+
+    # Resource exhaustion (DoS protection)
+    - alert: ResourceExhaustion
+      expr: |
+        (
+          container_memory_usage_bytes{namespace="portfolio"} / container_spec_memory_limit_bytes{namespace="portfolio"} > 0.9
+        ) or (
+          rate(container_cpu_usage_seconds_total{namespace="portfolio"}[5m]) / container_spec_cpu_quota{namespace="portfolio"} > 0.9
+        )
+      for: 10m
+      labels:
+        severity: warning
+        category: resource_security
+        cks_domain: minimize_microservice_vulnerabilities
+      annotations:
+        summary: "Resource exhaustion detected"
+        description: "Container {{ $labels.container }} is using > 90% of allocated resources"
+
+    # Security context violations
+    - alert: InsecureSecurityContext
+      expr: |
+        kube_pod_container_status_running{namespace="portfolio"} unless on(pod, container) (
+          kube_pod_container_info{namespace="portfolio"} * on(pod, container)
+          kube_pod_security_context{namespace="portfolio", runAsNonRoot="true"}
+        )
+      for: 0m
+      labels:
+        severity: critical
+        category: container_security
+        cks_domain: cluster_hardening
+      annotations:
+        summary: "Container running with insecure security context"
+        description: "Container {{ $labels.container }} in pod {{ $labels.pod }} not running as non-root"
+
+  - name: portfolio.performance
+    interval: 60s
+    rules:
+    # API response time degradation
+    - alert: APIResponseTimeDegradation
+      expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{namespace="portfolio",service="api"}[5m])) > 1.0
+      for: 5m
+      labels:
+        severity: warning
+        category: performance
+        cks_domain: monitoring_logging_runtime_security
+      annotations:
+        summary: "API response time degraded"
+        description: "95th percentile response time is {{ $value }}s for portfolio API"
+
+    # Database connection issues
+    - alert: DatabaseConnectionFailure
+      expr: rate(database_connection_errors_total{namespace="portfolio"}[5m]) > 0.1
+      for: 2m
+      labels:
+        severity: critical
+        category: database_security
+        cks_domain: minimize_microservice_vulnerabilities
+      annotations:
+        summary: "Database connection failures"
+        description: "ChromaDB connection failures detected in portfolio namespace"
+
+---
+# NetworkPolicy monitoring (if using Calico)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: network-policy-monitoring
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: portfolio
+    app.kubernetes.io/component: network-monitoring
+    cks-domain: "minimize-microservice-vulnerabilities"
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+    - job_name: 'calico-felix'
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+          - kube-system
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_k8s_app]
+        action: keep
+        regex: calico-node
+      - source_labels: [__address__]
+        target_label: __address__
+        regex: ([^:]+)(?::\d+)?
+        replacement: ${1}:9091
+    - job_name: 'calico-typha'
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+          - kube-system
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_k8s_app]
+        action: keep
+        regex: calico-typha
+---
+# Security audit log configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: audit-policy
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: portfolio
+    app.kubernetes.io/component: audit
+    cks-domain: "monitoring-logging-runtime-security"
+data:
+  audit-policy.yaml: |
+    apiVersion: audit.k8s.io/v1
+    kind: Policy
+    rules:
+    # Log security-sensitive operations in portfolio namespace
+    - level: RequestResponse
+      namespaces: ["portfolio"]
+      verbs: ["create", "update", "patch", "delete"]
+      resources:
+      - group: ""
+        resources: ["secrets", "configmaps", "serviceaccounts"]
+      - group: "rbac.authorization.k8s.io"
+        resources: ["roles", "rolebindings"]
+      - group: "networking.k8s.io"
+        resources: ["networkpolicies"]
+
+    # Log all RBAC operations
+    - level: RequestResponse
+      verbs: ["create", "update", "patch", "delete"]
+      resources:
+      - group: "rbac.authorization.k8s.io"
+        resources: ["*"]
+
+    # Log authentication failures
+    - level: Request
+      users: ["system:anonymous"]
+      verbs: ["*"]
+
+    # Log privilege escalation attempts
+    - level: RequestResponse
+      verbs: ["create", "update", "patch"]
+      resources:
+      - group: ""
+        resources: ["pods"]
+      namespaces: ["portfolio"]
+      omitStages:
+      - RequestReceived
+
+    # Log exec and port-forward (potential lateral movement)
+    - level: Request
+      verbs: ["create"]
+      resources:
+      - group: ""
+        resources: ["pods/exec", "pods/portforward"]
+
+    # Default catch-all
+    - level: Metadata
+      omitStages:
+      - RequestReceived

@@ -1,0 +1,128 @@
+# CKS Policy: Pod Security Standards Compliance
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8spodsecuritystandards
+  labels:
+    cks-domain: "cluster-setup"
+    policy-type: "pod-security-standards"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sPodSecurityStandards
+      validation:
+        properties:
+          level:
+            type: string
+            enum: ["privileged", "baseline", "restricted"]
+            description: "Pod Security Standards level to enforce"
+          version:
+            type: string
+            description: "Pod Security Standards version"
+            default: "latest"
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8spodsecuritystandards
+
+        # Restricted level violations
+        violation[{"msg": msg}] {
+          input.parameters.level == "restricted"
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.allowPrivilegeEscalation == false
+          msg := sprintf("Restricted: Container '%v' must set allowPrivilegeEscalation to false", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.parameters.level == "restricted"
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.runAsNonRoot == true
+          msg := sprintf("Restricted: Container '%v' must set runAsNonRoot to true", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.parameters.level == "restricted"
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.seccompProfile.type
+          msg := sprintf("Restricted: Container '%v' must define seccomp profile", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.parameters.level == "restricted"
+          container := input.review.object.spec.containers[_]
+          allowed_capabilities := {"NET_BIND_SERVICE"}
+          disallowed := container.securityContext.capabilities.add[_]
+          not disallowed in allowed_capabilities
+          msg := sprintf("Restricted: Container '%v' has disallowed capability '%v'", [container.name, disallowed])
+        }
+
+        # Baseline level violations
+        violation[{"msg": msg}] {
+          input.parameters.level in ["baseline", "restricted"]
+          container := input.review.object.spec.containers[_]
+          container.securityContext.privileged == true
+          msg := sprintf("Baseline: Container '%v' cannot be privileged", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.parameters.level in ["baseline", "restricted"]
+          input.review.object.spec.hostNetwork == true
+          msg := "Baseline: Pod cannot use host network"
+        }
+
+        violation[{"msg": msg}] {
+          input.parameters.level in ["baseline", "restricted"]
+          input.review.object.spec.hostPID == true
+          msg := "Baseline: Pod cannot use host PID namespace"
+        }
+
+        violation[{"msg": msg}] {
+          input.parameters.level in ["baseline", "restricted"]
+          input.review.object.spec.hostIPC == true
+          msg := "Baseline: Pod cannot use host IPC namespace"
+        }
+
+        violation[{"msg": msg}] {
+          input.parameters.level in ["baseline", "restricted"]
+          container := input.review.object.spec.containers[_]
+          dangerous_caps := {"SYS_ADMIN", "NET_ADMIN", "SYS_TIME", "SYS_MODULE"}
+          cap := container.securityContext.capabilities.add[_]
+          cap in dangerous_caps
+          msg := sprintf("Baseline: Container '%v' cannot add dangerous capability '%v'", [container.name, cap])
+        }
+---
+# Apply Pod Security Standards to different namespaces
+apiVersion: config.gatekeeper.sh/v1alpha1
+kind: K8sPodSecurityStandards
+metadata:
+  name: restricted-namespaces
+  labels:
+    cks-enforcement: "restricted"
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces: ["portfolio", "production"]
+  parameters:
+    level: "restricted"
+    version: "latest"
+---
+apiVersion: config.gatekeeper.sh/v1alpha1
+kind: K8sPodSecurityStandards
+metadata:
+  name: baseline-namespaces
+  labels:
+    cks-enforcement: "baseline"
+spec:
+  enforcementAction: warn
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces: ["monitoring", "ingress-nginx"]
+  parameters:
+    level: "baseline"
+    version: "latest"

@@ -1,0 +1,107 @@
+# CKS Policy: Require Security Context on all Pods
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredsecuritycontext
+  labels:
+    cks-domain: "cluster-setup"
+    policy-type: "pod-security"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredSecurityContext
+      validation:
+        properties:
+          runAsNonRoot:
+            type: boolean
+            description: "Require runAsNonRoot to be set"
+          runAsUser:
+            type: object
+            properties:
+              rule:
+                type: string
+                enum: ["MustRunAs", "MustRunAsNonRoot", "RunAsAny"]
+              ranges:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    min:
+                      type: integer
+                    max:
+                      type: integer
+          readOnlyRootFilesystem:
+            type: boolean
+            description: "Require readOnlyRootFilesystem to be true"
+          allowPrivilegeEscalation:
+            type: boolean
+            description: "allowPrivilegeEscalation must be false"
+          requiredDropCapabilities:
+            type: array
+            items:
+              type: string
+            description: "List of capabilities that must be dropped"
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredsecuritycontext
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.runAsNonRoot
+          msg := sprintf("Container '%v' must set securityContext.runAsNonRoot to true", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.readOnlyRootFilesystem
+          msg := sprintf("Container '%v' must set securityContext.readOnlyRootFilesystem to true", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          container.securityContext.allowPrivilegeEscalation == true
+          msg := sprintf("Container '%v' must set securityContext.allowPrivilegeEscalation to false", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          required := input.parameters.requiredDropCapabilities
+          provided := container.securityContext.capabilities.drop
+          missing := required[_]
+          not missing in provided
+          msg := sprintf("Container '%v' must drop capability '%v'", [container.name, missing])
+        }
+
+        violation[{"msg": msg}] {
+          input.parameters.runAsUser.rule == "MustRunAsNonRoot"
+          container := input.review.object.spec.containers[_]
+          container.securityContext.runAsUser == 0
+          msg := sprintf("Container '%v' cannot run as root (UID 0)", [container.name])
+        }
+---
+# Apply the security context constraint
+apiVersion: config.gatekeeper.sh/v1alpha1
+kind: K8sRequiredSecurityContext
+metadata:
+  name: must-have-security-context
+  labels:
+    cks-enforcement: "strict"
+spec:
+  enforcementAction: warn  # Change to "deny" for enforcement
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    excludedNamespaces:
+      - "kube-system"
+      - "gatekeeper-system"
+      - "falco-system"
+  parameters:
+    runAsNonRoot: true
+    runAsUser:
+      rule: "MustRunAsNonRoot"
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    requiredDropCapabilities: ["ALL"]

@@ -1,0 +1,220 @@
+# CKS Pod Security Policy (Legacy - for environments still using PSP)
+# Note: PSPs are deprecated in favor of Pod Security Standards
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: restricted-psp
+  labels:
+    app.kubernetes.io/name: pod-security-policy
+    app.kubernetes.io/component: security
+    cks-domain: "cluster-hardening"
+  annotations:
+    # Cluster autoscaler annotations
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
+spec:
+  # Require containers to run as non-root user
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+
+  # Require containers to run with non-root group
+  runAsGroup:
+    rule: 'MustRunAs'
+    ranges:
+    - min: 1000
+      max: 65535
+
+  # Require fsGroup to be non-root
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+    - min: 1000
+      max: 65535
+
+  # Supplemental groups
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+    - min: 1000
+      max: 65535
+
+  # Security context requirements
+  privileged: false
+  allowPrivilegeEscalation: false
+
+  # Required security capabilities
+  requiredDropCapabilities:
+  - ALL
+
+  # Allowed capabilities (very restricted)
+  allowedCapabilities:
+  - NET_BIND_SERVICE
+
+  # Default capabilities to add (none)
+  defaultAddCapabilities: []
+
+  # Host restrictions
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  hostPorts: []
+
+  # Volume restrictions
+  volumes:
+  - 'configMap'
+  - 'emptyDir'
+  - 'projected'
+  - 'secret'
+  - 'downwardAPI'
+  - 'persistentVolumeClaim'
+  # Disallow hostPath, hostPID, etc.
+
+  # Filesystem requirements
+  readOnlyRootFilesystem: true
+
+  # SELinux (if enabled)
+  seLinux:
+    rule: 'RunAsAny'
+
+  # Allow specific sysctls (none for maximum security)
+  allowedUnsafeSysctls: []
+  forbiddenSysctls:
+  - '*'
+---
+# Baseline PSP for less critical workloads
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: baseline-psp
+  labels:
+    app.kubernetes.io/name: pod-security-policy
+    app.kubernetes.io/component: security
+    cks-domain: "cluster-hardening"
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: 'runtime/default'
+spec:
+  # Allow containers to run as any non-root user
+  runAsUser:
+    rule: 'RunAsAny'
+
+  runAsGroup:
+    rule: 'RunAsAny'
+
+  fsGroup:
+    rule: 'RunAsAny'
+
+  supplementalGroups:
+    rule: 'RunAsAny'
+
+  # Basic security requirements
+  privileged: false
+  allowPrivilegeEscalation: false
+
+  # Baseline capability restrictions
+  requiredDropCapabilities:
+  - ALL
+
+  allowedCapabilities:
+  - NET_BIND_SERVICE
+  - CHOWN
+  - DAC_OVERRIDE
+  - FOWNER
+  - FSETID
+  - KILL
+  - SETGID
+  - SETUID
+  - SETPCAP
+  - NET_RAW
+  - SYS_CHROOT
+
+  # Host restrictions (same as restricted)
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  hostPorts: []
+
+  # More permissive volume policy
+  volumes:
+  - '*'
+
+  # Less restrictive filesystem
+  readOnlyRootFilesystem: false
+
+  seLinux:
+    rule: 'RunAsAny'
+
+  allowedUnsafeSysctls: []
+  forbiddenSysctls:
+  - '*'
+---
+# ClusterRole to use restricted PSP
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: restricted-psp-user
+  labels:
+    app.kubernetes.io/name: pod-security-policy
+    app.kubernetes.io/component: rbac
+    cks-domain: "cluster-hardening"
+rules:
+- apiGroups: ['policy']
+  resources: ['podsecuritypolicies']
+  verbs: ['use']
+  resourceNames: ['restricted-psp']
+---
+# ClusterRole to use baseline PSP
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: baseline-psp-user
+  labels:
+    app.kubernetes.io/name: pod-security-policy
+    app.kubernetes.io/component: rbac
+    cks-domain: "cluster-hardening"
+rules:
+- apiGroups: ['policy']
+  resources: ['podsecuritypolicies']
+  verbs: ['use']
+  resourceNames: ['baseline-psp']
+---
+# RoleBinding for portfolio namespace (restricted)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: portfolio-restricted-psp
+  namespace: portfolio
+  labels:
+    app.kubernetes.io/name: pod-security-policy
+    app.kubernetes.io/component: rbac
+    cks-domain: "cluster-hardening"
+roleRef:
+  kind: ClusterRole
+  name: restricted-psp-user
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+# All service accounts in portfolio namespace
+- kind: Group
+  name: system:serviceaccounts:portfolio
+  apiGroup: rbac.authorization.k8s.io
+---
+# RoleBinding for monitoring namespace (baseline)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: monitoring-baseline-psp
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: pod-security-policy
+    app.kubernetes.io/component: rbac
+    cks-domain: "cluster-hardening"
+roleRef:
+  kind: ClusterRole
+  name: baseline-psp-user
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: Group
+  name: system:serviceaccounts:monitoring
+  apiGroup: rbac.authorization.k8s.io

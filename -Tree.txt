@@ -1,0 +1,130 @@
+.
+├── -Tree.txt
+├── Arise-Tree.txt
+├── GP-copilot
+│   ├── AUDIT_SUMMARY.md
+│   ├── COMPREHENSIVE_SECURITY_AUDIT_REPORT.md
+│   ├── backups
+│   │   ├── demo-modified
+│   │   │   └── terraform
+│   │   │       ├── backend.tf
+│   │   │       ├── main.tf
+│   │   │       ├── outputs.tf
+│   │   │       ├── providers.tf
+│   │   │       └── variables.tf
+│   │   ├── personal-modified
+│   │   │   ├── post-deploy.sh
+│   │   │   └── terraform
+│   │   │       ├── backend.tf
+│   │   │       ├── main.tf
+│   │   │       ├── outputs.tf
+│   │   │       ├── post-deploy.sh
+│   │   │       ├── providers.tf
+│   │   │       └── variables.tf
+│   │   └── shared-modules-modified
+│   │       └── aks
+│   │           ├── argocd-values.yaml
+│   │           ├── main.tf
+│   │           ├── monitoring-values.yaml
+│   │           ├── outputs.tf
+│   │           ├── providers.tf
+│   │           └── variables.tf
+│   ├── reports
+│   │   └── SECURITY_FIXES.md
+│   ├── run_security_audit.sh
+│   └── scans
+│       ├── bandit_scan.json
+│       ├── final_tfsec_scan.json
+│       ├── gitleaks_scan.json
+│       ├── initial_tfsec_scan.json
+│       ├── mid_remediation_tfsec_scan.json
+│       ├── semgrep_scan.json
+│       └── trivy_scan.json
+├── MIGRATION-SUMMARY.md
+├── README-ENVIRONMENTS.md
+├── README.md
+├── SECURITY_FIXES.md
+├── aks_deployment.log
+├── argocd-apps
+│   ├── monitoring-apps.yaml
+│   └── portfolio-app.yaml
+├── arise-git-push.sh
+├── arise.sh
+├── docs
+├── infra-scripts
+│   ├── az-install.sh
+│   ├── manage-environments.sh
+│   ├── monitoring-setup.sh
+│   ├── register_tsi_provider.sh
+│   └── setup-secrets.sh
+├── k8s-manifests
+│   └── portfolio
+│       ├── api.yaml
+│       ├── avatar-creation.yaml
+│       ├── chromadb.yaml
+│       ├── configmap.yaml
+│       ├── ingress.yaml
+│       ├── kustomization.yaml
+│       ├── namespace.yaml
+│       ├── rag-pipeline.yaml
+│       ├── secret.yaml
+│       └── ui.yaml
+├── personal
+│   ├── post-deploy.sh
+│   └── terraform
+│       ├── backend.tf
+│       ├── main.tf
+│       ├── outputs.tf
+│       ├── post-deploy.sh
+│       ├── providers.tf
+│       └── variables.tf
+├── releases
+│   └── local-argocd-setup
+│       ├── COPY_TO_PORTFOLIO_REPO.sh
+│       ├── DEPLOYMENT_GUIDE.md
+│       ├── QUICK_COMMANDS.md
+│       ├── README.md
+│       ├── argocd-apps
+│       │   ├── monitoring-apps.yaml
+│       │   └── portfolio-app.yaml
+│       ├── k8s-manifests
+│       │   └── portfolio
+│       │       ├── api.yaml
+│       │       ├── avatar-creation.yaml
+│       │       ├── chromadb.yaml
+│       │       ├── configmap.yaml
+│       │       ├── ingress.yaml
+│       │       ├── kustomization.yaml
+│       │       ├── namespace.yaml
+│       │       ├── rag-pipeline.yaml
+│       │       ├── secret.yaml
+│       │       └── ui.yaml
+│       └── scripts
+│           ├── argocd-values.yaml
+│           ├── cleanup-secrets.sh
+│           ├── deploy-local.sh
+│           ├── import_aks.sh
+│           └── monitoring-values.yaml
+├── sandbox-env
+│   └── terraform
+│       ├── backend.tf
+│       ├── main.tf
+│       ├── outputs.tf
+│       ├── providers.tf
+│       └── variables.tf
+├── scripts
+│   ├── argocd-values.yaml
+│   ├── cleanup-secrets.sh
+│   ├── deploy-local.sh
+│   ├── import_aks.sh
+│   └── monitoring-values.yaml
+└── shared-modules
+    └── aks
+        ├── argocd-values.yaml
+        ├── main.tf
+        ├── monitoring-values.yaml
+        ├── outputs.tf
+        ├── providers.tf
+        └── variables.tf
+
+29 directories, 99 files

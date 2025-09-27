@@ -1,0 +1,92 @@
+# CKS Policy: Require Resource Limits and Requests
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredresources
+  labels:
+    cks-domain: "cluster-hardening"
+    policy-type: "resource-management"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredResources
+      validation:
+        properties:
+          requests:
+            type: array
+            items:
+              type: string
+            description: "List of required resource requests (cpu, memory)"
+          limits:
+            type: array
+            items:
+              type: string
+            description: "List of required resource limits (cpu, memory)"
+          maxCpu:
+            type: string
+            description: "Maximum CPU limit allowed"
+          maxMemory:
+            type: string
+            description: "Maximum memory limit allowed"
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredresources
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          required_requests := input.parameters.requests
+          required_request := required_requests[_]
+          not container.resources.requests[required_request]
+          msg := sprintf("Container '%v' must specify resource request for '%v'", [container.name, required_request])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          required_limits := input.parameters.limits
+          required_limit := required_limits[_]
+          not container.resources.limits[required_limit]
+          msg := sprintf("Container '%v' must specify resource limit for '%v'", [container.name, required_limit])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          max_cpu := input.parameters.maxCpu
+          cpu_limit := container.resources.limits.cpu
+          cpu_limit_value := units.parse_bytes(cpu_limit)
+          max_cpu_value := units.parse_bytes(max_cpu)
+          cpu_limit_value > max_cpu_value
+          msg := sprintf("Container '%v' CPU limit '%v' exceeds maximum allowed '%v'", [container.name, cpu_limit, max_cpu])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          max_memory := input.parameters.maxMemory
+          memory_limit := container.resources.limits.memory
+          memory_limit_value := units.parse_bytes(memory_limit)
+          max_memory_value := units.parse_bytes(max_memory)
+          memory_limit_value > max_memory_value
+          msg := sprintf("Container '%v' memory limit '%v' exceeds maximum allowed '%v'", [container.name, memory_limit, max_memory])
+        }
+---
+apiVersion: config.gatekeeper.sh/v1alpha1
+kind: K8sRequiredResources
+metadata:
+  name: must-have-resource-limits
+  labels:
+    cks-enforcement: "strict"
+spec:
+  enforcementAction: warn
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    excludedNamespaces:
+      - "kube-system"
+      - "gatekeeper-system"
+  parameters:
+    requests: ["cpu", "memory"]
+    limits: ["cpu", "memory"]
+    maxCpu: "2000m"
+    maxMemory: "2Gi"

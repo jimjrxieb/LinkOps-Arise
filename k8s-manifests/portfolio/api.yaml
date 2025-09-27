@@ -16,9 +16,29 @@ spec:
       labels:
         app.kubernetes.io/name: api
     spec:
+      # CKS Security: Pod security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: api
         image: ghcr.io/jimjrxieb/portfolio-api:latest
+        # CKS Security: Container security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          runAsGroup: 1001
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - NET_BIND_SERVICE
         ports:
         - containerPort: 8000
           name: http
@@ -46,6 +66,10 @@ spec:
         volumeMounts:
         - name: api-data
           mountPath: /app/data
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: var-tmp-volume
+          mountPath: /var/tmp
         livenessProbe:
           httpGet:
             path: /health
@@ -67,6 +91,10 @@ spec:
             cpu: "500m"
       volumes:
       - name: api-data
+        emptyDir: {}
+      - name: tmp-volume
+        emptyDir: {}
+      - name: var-tmp-volume
         emptyDir: {}
 ---
 apiVersion: v1
